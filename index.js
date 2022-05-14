@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const pico = require('picomatch');
 const readdir = require('@folder/readdir');
-const parseGitignore = require('/Users/jonschlinkert/dev/git-utils/parse-gitignore-master/index.js');
+const parseGitignore = require('parse-gitignore');
 
 const isObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -79,7 +79,7 @@ const getIncluded = (dir, options) => {
     }
   }
 
-  return included;
+  return included.filter((f, i, arr) => arr.findIndex(e => e.path === f.path) === i);
 };
 
 const isIncluded = (file, { exts = [], included = [] }) => {
@@ -126,7 +126,7 @@ const createMatchers = (dir, pattern, options = {}) => {
   const included = getIncluded(dir, options);
   const isIgnored = getIgnored(dir, options);
 
-  const exts = options.exts || ['.jsx', '.js', '.mjs', '.ts', '.tsx'];
+  const exts = options.exts || ['.jsx', '.js', '.json', '.mjs', '.ts', '.tsx'];
   const isMatch = pattern ? pico(pattern, options) : () => true;
 
   return {
@@ -141,8 +141,7 @@ const projectFiles = async (dir, pattern, options = {}) => {
   }
 
   const { fileIsMatch, dirIsMatch } = createMatchers(dir, pattern, options);
-  const opts = { recursive: true, objects: true, base: options.cwd || dir, ...options };
-
+  const opts = { absolute: true, recursive: true, objects: true, base: options.cwd || dir, ...options };
   const files = [];
 
   const onDirectory = dirent => {
@@ -154,15 +153,13 @@ const projectFiles = async (dir, pattern, options = {}) => {
   };
 
   const onFile = async file => {
-    const match = fileIsMatch(file);
-    if (match) {
+    if (fileIsMatch(file)) {
       options.onFile?.(file);
       files.push(file);
     }
   };
 
   await readdir(dir, { ...opts, onDirectory, onFile });
-  // console.log(files.map(file => file.relative));
   return files;
 };
 
@@ -171,16 +168,3 @@ module.exports.createMatchers = createMatchers;
 module.exports.getIgnored = getIgnored;
 module.exports.getIncluded = getIncluded;
 module.exports.projectFiles = projectFiles;
-
-// const dir = '/Users/jonschlinkert/dev/@brandscale/api/packages/react-ui';
-
-// projectFiles(dir, '**/*.{ts,mjs}', { ignore: 'cypress' });
-
-// const project = {
-//   files: () => {},
-//   metadata: () => {},
-//   dotfiles: () => {},
-//   git: () => {},
-//   tests: () => {},
-//   junk: () => {}
-// };
