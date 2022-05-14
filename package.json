@@ -1,0 +1,11 @@
+{
+  "name": "parse-project",
+  "description": "",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@folder/readdir": "^3.1.0",
+    "picomatch": "^2.3.0"
+  }
+}
